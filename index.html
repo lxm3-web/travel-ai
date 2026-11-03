@@ -4588,16 +4588,29 @@ try{ if(typeof view!=='undefined'&&view.classList.contains('on')&&view.dataset.i
   link.hidden=false;
   link.onclick=open; card.querySelector('.x').onclick=close;
   $('#kvl-ob').onchange=function(){$('#kvl-oth').hidden=!this.checked;if(this.checked)$('#kvl-oth').focus()};
-  /* 走到最後一步：01＝進度走到第 6 步（成團團號）；02＝步驟列走到最後一格；03＝幕次走到最後一幕 */
-  function check(){
+  /* 什麼時候跳出（只要符合其中一項）：
+     ① 走到任何一位的後段：01＝進度第 5 步（報價單）以後；02＝步驟列最後兩格，或走完；03＝倒數第二幕以後
+     ② 看過 2 位以上，且從第一次打開算起滿 60 秒 */
+  var seen={},t0=0;
+  function why(){
     var a=document.querySelector('.t1-pl li.on');
-    if(a&&+a.dataset.s>=6)done.t1=1;
-    var st=document.querySelectorAll('.step[data-go]');
-    if(st.length&&st[st.length-1].classList.contains('cur'))done.t2=1;
-    var g=document.querySelectorAll('button[data-a="go"]');
-    if(g.length&&g[g.length-1].classList.contains('on'))done.t3=1;
-    if(!shown&&!sent&&Object.keys(done).length>=1&&store('kvlShown')!=='1')setTimeout(function(){if(!shown)open()},1400);
+    if(a&&+a.dataset.s>=5)return 't1';
+    var st=[].slice.call(document.querySelectorAll('.step[data-go]'));
+    if(st.length>=2){var n=st.length,last=st[n-1],pre=st[n-2];
+      if(last.classList.contains('cur')||last.classList.contains('done')||pre.classList.contains('cur'))return 't2'}
+    var g=[].slice.call(document.querySelectorAll('button[data-a="go"]'));
+    if(g.length>=2){var i=g.findIndex(function(b){return b.classList.contains('on')});if(i>=g.length-2)return 't3'}
+    var v=document.getElementById('view');
+    if(v&&v.classList.contains('on')){if(!t0)t0=Date.now();seen[v.dataset.i]=1}
+    if(Object.keys(seen).length>=2&&Date.now()-t0>=60000)return 'two';
+    return '';
   }
+  function check(){
+    if(shown||sent||store('kvlShown')==='1')return;
+    var w=why();
+    if(w){card.dataset.why=w;setTimeout(function(){if(!shown)open()},1400)}
+  }
+  setInterval(check,3000);
   var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(check,250)}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
   if(TEST)setTimeout(open,600);
   f.addEventListener('submit',function(ev){
