@@ -4507,6 +4507,125 @@ try{ if(typeof view!=='undefined'&&view.classList.contains('on')&&view.dataset.i
 })();
 
 </script>
+<!-- kv-lead：留聯絡資訊卡片（走到任一位 agent 的最後一步後滑出；右下角另有常駐連結） -->
+<style id="kvlead-css">
+#kvl-link{position:fixed;right:clamp(14px,2vw,28px);bottom:clamp(14px,2vw,24px);z-index:40;border:1px solid var(--ink);background:var(--bg);color:var(--ink);padding:9px 16px;font-size:13px;letter-spacing:.12em;border-radius:0;cursor:pointer;font-family:inherit}
+#kvl-link:hover{background:var(--ink);color:var(--bg)}
+#kvl{position:fixed;right:clamp(14px,2vw,28px);bottom:clamp(14px,2vw,24px);z-index:60;width:min(420px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;background:#fbf9f3;color:var(--ink);border:1px solid var(--ink);border-top:4px solid var(--red);box-shadow:0 24px 60px -24px rgba(23,21,15,.55);padding:22px 24px 20px;transform:translateY(24px);opacity:0;pointer-events:none;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .35s}
+#kvl.on{transform:none;opacity:1;pointer-events:auto}
+#kvl[hidden]{display:none}
+#kvl .x{position:absolute;right:10px;top:8px;width:34px;height:34px;font-size:22px;line-height:1;color:var(--mute);background:none;border:0;cursor:pointer}
+#kvl .x:hover{color:var(--red)}
+#kvl h3{font-family:var(--serif);font-weight:900;font-size:22px;line-height:1.3;margin:0 28px 6px 0;letter-spacing:.02em}
+#kvl .sub{font-size:14px;line-height:1.7;color:var(--mute);margin-bottom:14px}
+#kvl label{display:block;font-size:12.5px;letter-spacing:.14em;color:var(--mute);margin:12px 0 5px}
+#kvl label i{font-style:normal;color:var(--red);margin-left:4px}
+#kvl input[type=text],#kvl input[type=tel],#kvl input[type=email]{width:100%;border:1px solid rgba(23,21,15,.3);border-radius:0;background:#fff;color:var(--ink);padding:10px 12px;font:inherit;font-size:16px}
+#kvl input:focus{outline:0;border-color:var(--red)}
+#kvl .opts{display:grid;gap:6px}
+#kvl .opts label{display:flex;align-items:center;gap:10px;margin:0;font-size:15px;letter-spacing:.02em;color:var(--ink);cursor:pointer;padding:6px 0}
+#kvl .opts input[type=checkbox]{width:18px;height:18px;accent-color:var(--red);flex:none}
+#kvl #kvl-oth{margin-top:2px}
+#kvl .go{margin-top:18px;width:100%;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:0;font-family:var(--serif);font-weight:900;font-size:17px;letter-spacing:.4em;text-indent:.4em;padding:13px;cursor:pointer}
+#kvl .go:hover{background:var(--red);border-color:var(--red)}
+#kvl .go[disabled]{opacity:.5;cursor:default}
+#kvl .err{color:var(--red);font-size:13.5px;margin-top:10px;min-height:1em}
+#kvl .prev{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:14px;line-height:1.75;background:#fff;border:1px dashed rgba(23,21,15,.35);padding:12px 14px;margin:0 0 14px;max-height:34vh;overflow:auto}
+#kvl .ways{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#kvl .ways a{display:block;text-align:center;padding:13px 8px;border:1px solid var(--ink);color:var(--ink);text-decoration:none;font-family:var(--serif);font-weight:900;font-size:16px;letter-spacing:.12em}
+#kvl .ways .wl{background:var(--ink);color:var(--bg)}
+#kvl .ways a:hover{background:var(--red);border-color:var(--red);color:#fff}
+#kvl .bk{margin-top:14px;border:0;background:none;color:var(--mute);font:inherit;font-size:14px;cursor:pointer}
+#kvl .bk:hover{color:var(--red)}
+#kvl .ok{padding:18px 0 8px}
+#kvl .ok b{display:block;font-family:var(--serif);font-weight:900;font-size:22px;margin-bottom:8px}
+#kvl .ok p{font-size:15px;line-height:1.8;color:var(--mute)}
+@media(max-width:820px){#kvl{right:0;left:0;bottom:0;width:auto;max-height:88vh;border-left:0;border-right:0;border-bottom:0;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}#kvl-link{bottom:12px;right:12px}}
+</style>
+<button id="kvl-link" type="button" hidden>留下聯絡資訊</button>
+<section id="kvl" role="dialog" aria-modal="false" aria-labelledby="kvl-t" hidden>
+ <button class="x" type="button" aria-label="關閉">×</button>
+ <form id="kvl-f" novalidate>
+  <h3 id="kvl-t">有興趣了解更多嗎？</h3>
+  <p class="sub">歡迎留下聯絡資訊，我們會再與您聯絡。</p>
+  <label for="kvl-n">姓名<i>*</i></label><input id="kvl-n" type="text" autocomplete="name">
+  <label for="kvl-c">旅行社名稱<i>*</i></label><input id="kvl-c" type="text" autocomplete="organization">
+  <label for="kvl-p">電話<i>*</i></label><input id="kvl-p" type="tel" autocomplete="tel" inputmode="tel">
+  <label for="kvl-e">Email（選填）</label><input id="kvl-e" type="email" autocomplete="email">
+  <label>想多了解哪一位（選填）</label>
+  <div class="opts" id="kvl-o">
+   <label><input type="checkbox" value="自動排行程與報價單">自動排行程與報價單</label>
+   <label><input type="checkbox" value="自動分房表">自動分房表</label>
+   <label><input type="checkbox" value="自動化對帳表">自動化對帳表</label>
+   <label><input type="checkbox" value="__other_option__" id="kvl-ob">其他</label>
+   <input id="kvl-oth" type="text" placeholder="請寫下想了解什麼" hidden>
+  </div>
+  <p class="err" id="kvl-err" role="alert"></p>
+  <button class="go" type="submit">下一步：選擇送出方式</button>
+ </form>
+ <div id="kvl-s2" hidden>
+  <h3>最後一步：選一個送出</h3>
+  <p class="sub">下面是會送出的內容，確認後選一個管道。</p>
+  <pre class="prev" id="kvl-prev"></pre>
+  <div class="ways"><a class="wl" id="kvl-line" target="_blank" rel="noopener" href="#">用 LINE 送出</a><a class="wm" id="kvl-mail" href="#">用 Email 送出</a></div>
+  <button class="bk" type="button" id="kvl-bk">← 回去修改</button>
+ </div>
+ <div class="ok" id="kvl-ok" hidden><b>謝謝您！</b><p>送出後我們會再與您聯絡。您也可以繼續把其他位 agent 玩完。</p></div>
+</section>
+<script id="kvlead-js">
+(function(){
+  /* 送出方式照官網「預約諮詢」：填欄位 → 選 LINE 或 Email，內容帶進對話／信件，由對方按送出。 */
+  var LINE_OA_ID='@288kfvay', EMAIL='consultant@asia-learning.com';
+  var SRC='旅行公會 DM 示範頁（lxm3-web.github.io/travel-ai）';
+  var TEST=/[?&]kvlead=1/.test(location.search);
+  var $=function(s){return document.querySelector(s)};
+  var card=$('#kvl'),link=$('#kvl-link'),f=$('#kvl-f'),s2=$('#kvl-s2'),ok=$('#kvl-ok'),err=$('#kvl-err');
+  var done={},shown=false,sent=false;
+  var store=function(k,v){try{if(v===undefined)return sessionStorage.getItem(k);sessionStorage.setItem(k,v)}catch(e){}};
+  if(store('kvlSent')==='1')return;
+  function open(){card.hidden=false;void card.offsetWidth;card.classList.add('on');link.hidden=true;shown=true;store('kvlShown','1')}
+  function close(){card.classList.remove('on');setTimeout(function(){card.hidden=true},400);link.hidden=sent}
+  link.hidden=false;
+  link.onclick=open; card.querySelector('.x').onclick=close;
+  $('#kvl-ob').onchange=function(){$('#kvl-oth').hidden=!this.checked;if(this.checked)$('#kvl-oth').focus()};
+  /* 走到最後一步：01＝進度走到第 6 步（成團團號）；02＝步驟列走到最後一格；03＝幕次走到最後一幕 */
+  function check(){
+    var a=document.querySelector('.t1-pl li.on');
+    if(a&&+a.dataset.s>=6)done.t1=1;
+    var st=document.querySelectorAll('.step[data-go]');
+    if(st.length&&st[st.length-1].classList.contains('cur'))done.t2=1;
+    var g=document.querySelectorAll('button[data-a="go"]');
+    if(g.length&&g[g.length-1].classList.contains('on'))done.t3=1;
+    if(!shown&&!sent&&Object.keys(done).length>=1&&store('kvlShown')!=='1')setTimeout(function(){if(!shown)open()},1400);
+  }
+  var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(check,250)}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
+  if(TEST)setTimeout(open,600);
+  f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var n=$('#kvl-n').value.trim(),c=$('#kvl-c').value.trim(),p=$('#kvl-p').value.trim(),e=$('#kvl-e').value.trim();
+    if(!n||!c||!p){err.textContent='姓名、旅行社名稱、電話請填寫。';return}
+    if(p.replace(/\D/g,'').length<8){err.textContent='電話看起來少了幾碼，請再確認。';return}
+    if(e&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){err.textContent='Email 格式看起來不對。';return}
+    var other=$('#kvl-ob').checked,oth=$('#kvl-oth').value.trim();
+    if(other&&!oth){err.textContent='選了「其他」，請寫下想了解什麼。';return}
+    err.textContent='';
+    var w=[];document.querySelectorAll('#kvl-o input[type=checkbox]:checked').forEach(function(x){if(x.id!=='kvl-ob')w.push(x.value)});
+    if(other)w.push('其他：'+oth);
+    var L=['您好，','',w.length?('我玩過示範頁，想多了解：'+w.join('、')+'。基本資料如下：'):'我玩過示範頁，想多了解更多。基本資料如下：','','姓名：'+n,'旅行社：'+c,'電話：'+p];
+    if(e)L.push('Email：'+e);
+    L.push('','【來自 '+SRC+' 的聯絡資訊】');
+    var msg=L.join('\n');
+    $('#kvl-prev').textContent=msg;
+    $('#kvl-line').href='https://line.me/R/oaMessage/'+LINE_OA_ID+'/?'+encodeURIComponent(msg);
+    $('#kvl-mail').href='mailto:'+EMAIL+'?subject='+encodeURIComponent('【來自 '+SRC+' 的聯絡資訊】')+'&body='+encodeURIComponent(msg);
+    f.hidden=true;s2.hidden=false;card.scrollTop=0;
+  });
+  $('#kvl-bk').onclick=function(){s2.hidden=true;f.hidden=false};
+  function fin(){sent=true;store('kvlSent','1');setTimeout(function(){s2.hidden=true;ok.hidden=false;link.hidden=true},400)}
+  $('#kvl-line').addEventListener('click',fin);$('#kvl-mail').addEventListener('click',fin);
+})();
+</script>
+
 </body>
 </html>
 
